@@ -1,0 +1,32 @@
+# Block all node_modules globally across all subfolders
+**/node_modules/
+node_modules/
+.pnp
+.pnp.*
+.yarn/
+
+# Next.js & Build outputs
+.next/
+out/
+build/
+.vercel
+.turbo/
+dist/
+
+# C Engine Build Artifacts & Binaries
+engine/build/
+engine/src/*.o
+*.so
+*.dll
+*.o
+
+# Environment & Misc
+.env*
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug logs
+*-debug.log*
+*-error.log*
