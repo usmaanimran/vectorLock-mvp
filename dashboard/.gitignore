@@ -1,0 +1,30 @@
+# Dependencies (Blocks them globally in all subfolders)
+node_modules/
+.pnp
+.pnp.*
+.yarn/
+
+# Testing & Cache
+coverage/
+.next/
+out/
+.vercel
+.turbo/
+
+# C Logistics Engine Build Artifacts & Binaries
+engine/build/
+engine/src/*.o
+*.so
+*.dll
+*.o
+
+# Environment & Misc
+.env*
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug logs
+*-debug.log*
+*-error.log*
