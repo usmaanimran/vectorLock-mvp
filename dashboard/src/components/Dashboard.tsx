@@ -62,6 +62,7 @@ export function Dashboard() {
     <div className="relative w-full h-screen bg-black overflow-hidden">
       <CommandPanel
         targetPos={targetPos}
+        setTargetPos={setTargetPos}
         manifest={manifest}
         setManifest={setManifest}
         setOptimizedRoutes={setOptimizedRoutes}

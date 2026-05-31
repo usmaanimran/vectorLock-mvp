@@ -12,6 +12,7 @@ type TruckPosition = { id: string, row: number, col: number, path?: { row: numbe
 
 export function CommandPanel({
   targetPos,
+  setTargetPos,
   manifest,
   setManifest,
   setOptimizedRoutes,
@@ -26,6 +27,7 @@ export function CommandPanel({
   gridMapRef
 }: {
   targetPos: { row: number, col: number } | null,
+  setTargetPos: (pos: { row: number, col: number } | null) => void,
   manifest: ManifestItem[],
   setManifest: (m: ManifestItem[]) => void,
   setOptimizedRoutes: (r: ManifestItem[][]) => void,
@@ -158,7 +160,6 @@ export function CommandPanel({
   const handleAddToManifest = () => {
     if (!targetPos || !itemName) {
       setError('Please provide an item name and click the map to set a target.');
-      setTimeout(() => setError(null), 4000);
       return;
     }
 
@@ -179,10 +180,10 @@ export function CommandPanel({
 
       if (errorMsg) {
         setError(errorMsg);
-        setTimeout(() => setError(null), 4000);
         return;
       }
     }
+    
     const id = crypto.randomUUID();
     const newManifest = [...manifest, { id, name: itemName, weight: parsedWeight, volume: parsedVolume, target: targetPos }];
     setManifest(newManifest);
@@ -191,9 +192,11 @@ export function CommandPanel({
     const routes = optimizeDispatch(newManifest, bases);
     setOptimizedRoutes(routes);
 
+    // Reset all states
     setItemName('');
     setWeight(100); 
-    setVolume(5);   
+    setVolume(5);
+    setTargetPos(null); // This clears the target coordinates!
     setError(null);
     setStatus('Item added to manifest.');
     setTimeout(() => setStatus(null), 3000);
@@ -203,7 +206,6 @@ export function CommandPanel({
     if (mode === 'swarm') {
       if (!targetPos) {
         setError('Please select a target on the map for Swarm Test.');
-        setTimeout(() => setError(null), 4000);
         return;
       }
       setLoading(true);
@@ -310,43 +312,43 @@ export function CommandPanel({
   };
 
   return (
-    <div className="absolute top-4 left-4 z-10 w-96 bg-neutral-900/80 backdrop-blur-2xl border border-neutral-800 text-neutral-100 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="absolute top-4 left-4 z-10 w-96 bg-neutral-900/80 backdrop-blur-2xl border border-neutral-800 text-neutral-100 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
 
       {/* STATIC TOP AREA: Live Fleet Status UI */}
       {fleetStatus.length > 0 && (
-        <div className="p-5 border-b border-neutral-800 bg-neutral-900/50 shrink-0">
-          <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <div className="p-4 border-b border-neutral-800 bg-neutral-900/50 shrink-0">
+          <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-2">
             <Truck className="w-4 h-4" /> Live Data Feed
           </h3>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             {fleetStatus.map(truck => (
-              <div key={truck.id} className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center text-[11px] uppercase font-bold text-neutral-500">
+              <div key={truck.id} className="flex flex-col gap-1">
+                <div className="flex justify-between items-center text-[10px] uppercase font-bold text-neutral-500">
                   <span className={
                     truck.id === 'blue' ? 'text-blue-400' :
                       truck.id === 'green' ? 'text-emerald-400' :
                         truck.id === 'yellow' ? 'text-amber-400' : 'text-neutral-400'
                   }>{truck.id} Truck</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="w-8 text-[10px] text-neutral-500">WGT</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="w-8 text-[9px] text-neutral-500">WGT</span>
                   <div className="flex-1 bg-neutral-950 h-1.5 rounded-full overflow-hidden border border-neutral-800 relative">
                     <div
                       className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${truck.id === 'blue' ? 'bg-blue-500' : truck.id === 'green' ? 'bg-emerald-500' : 'bg-amber-500'}`}
                       style={{ width: `${Math.min(100, (truck.currentWeight / truck.maxWeight) * 100)}%` }}
                     />
                   </div>
-                  <span className="w-20 text-[10px] text-right font-mono text-neutral-400">{truck.currentWeight}/{truck.maxWeight}kg</span>
+                  <span className="w-16 text-[9px] text-right font-mono text-neutral-400">{truck.currentWeight}/{truck.maxWeight}kg</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="w-8 text-[10px] text-neutral-500">VOL</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="w-8 text-[9px] text-neutral-500">VOL</span>
                   <div className="flex-1 bg-neutral-950 h-1.5 rounded-full overflow-hidden border border-neutral-800 relative">
                     <div
                       className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${truck.id === 'blue' ? 'bg-blue-500' : truck.id === 'green' ? 'bg-emerald-500' : 'bg-amber-500'}`}
                       style={{ width: `${Math.min(100, (truck.currentVolume / truck.maxVolume) * 100)}%` }}
                     />
                   </div>
-                  <span className="w-20 text-[10px] text-right font-mono text-neutral-400">{truck.currentVolume}/{truck.maxVolume}m³</span>
+                  <span className="w-16 text-[9px] text-right font-mono text-neutral-400">{truck.currentVolume}/{truck.maxVolume}m³</span>
                 </div>
               </div>
             ))}
@@ -355,17 +357,17 @@ export function CommandPanel({
       )}
 
       {/* STATIC TOP AREA: Animated Mode Toggle Header */}
-      <div className="p-3 bg-neutral-900/50 border-b border-neutral-800 shrink-0">
+      <div className="p-2 bg-neutral-900/50 border-b border-neutral-800 shrink-0">
         <div className="flex bg-neutral-950 p-1 rounded-xl border border-neutral-800">
           <button
             onClick={() => setMode('vectorLock')}
-            className={`flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ${mode === 'vectorLock' ? 'bg-white text-black shadow-md scale-[1.02]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50'}`}
+            className={`flex-1 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ${mode === 'vectorLock' ? 'bg-white text-black shadow-md scale-[1.02]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50'}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" /> vectorLock
           </button>
           <button
             onClick={() => setMode('swarm')}
-            className={`flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ${mode === 'swarm' ? 'bg-indigo-500 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] scale-[1.02]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50'}`}
+            className={`flex-1 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ${mode === 'swarm' ? 'bg-indigo-500 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] scale-[1.02]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50'}`}
           >
             <Cpu className="w-3.5 h-3.5" /> Algo Test
           </button>
@@ -373,10 +375,10 @@ export function CommandPanel({
       </div>
 
       {/* SCROLLABLE MIDDLE AREA: Hidden Scrollbar applied via Tailwind CSS properties */}
-      <div className="flex-1 p-5 overflow-y-auto flex flex-col gap-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Animated Traffic Density Toggle */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Traffic Density</label>
           <div className="flex bg-neutral-950 rounded-xl border border-neutral-800 p-1">
             {['Low', 'Mid', 'High', ...(mode === 'swarm' ? ['Critical'] : [])].map((level) => (
@@ -386,7 +388,7 @@ export function CommandPanel({
                   setTrafficLevel(level as 'Low' | 'Mid' | 'High' | 'Critical');
                   socket.emit('set_traffic_density', level);
                 }}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all duration-300 ${trafficLevel === level
+                className={`flex-1 py-1 text-xs font-medium rounded-lg transition-all duration-300 ${trafficLevel === level
                   ? level === 'Critical' 
                     ? 'bg-red-600 text-white shadow-md shadow-red-900/50 scale-[1.02]' 
                     : 'bg-neutral-700 text-white shadow-md scale-[1.02]'
@@ -400,42 +402,51 @@ export function CommandPanel({
         </div>
 
         {/* Item Builder UI */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-2"><Package className="w-4 h-4" /> Draft Item</h4>
 
           {mode === 'vectorLock' && (
-            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-300">
               <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Item Name</label>
               <input
                 type="text"
                 placeholder="e.g. Med Supplies"
                 value={itemName}
-                onChange={e => setItemName(e.target.value)}
-                className="bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-lg px-3 py-2 outline-none transition-all text-sm text-neutral-200 placeholder:text-neutral-600"
+                onChange={e => {
+                  setItemName(e.target.value);
+                  if (error) setError(null);
+                }}
+                className="bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-lg px-3 py-1.5 outline-none transition-all text-sm text-neutral-200 placeholder:text-neutral-600"
               />
             </div>
           )}
 
           {mode === 'vectorLock' && (
             <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Weight (kg)</label>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Weight (kg) / MAX 2000KG</label>
                 <input
                   type="number"
                   value={weight}
-                  onChange={e => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-lg px-3 py-2 outline-none transition-all text-sm text-neutral-200"
+                  onChange={e => {
+                    setWeight(e.target.value === '' ? '' : Number(e.target.value));
+                    if (error) setError(null);
+                  }}
+                  className="bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-lg px-3 py-1.5 outline-none transition-all text-sm text-neutral-200"
                   min="1"
                   max="2000"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Volume (m³)</label>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Volume (m³) / MAX 20m³</label>
                 <input
                   type="number"
                   value={volume}
-                  onChange={e => setVolume(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-lg px-3 py-2 outline-none transition-all text-sm text-neutral-200"
+                  onChange={e => {
+                    setVolume(e.target.value === '' ? '' : Number(e.target.value));
+                    if (error) setError(null);
+                  }}
+                  className="bg-neutral-950 border border-neutral-800 focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 rounded-lg px-3 py-1.5 outline-none transition-all text-sm text-neutral-200"
                   min="1"
                   max="20"
                 />
@@ -444,7 +455,7 @@ export function CommandPanel({
           )}
 
           {/* Target Display */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 flex items-center justify-between transition-colors hover:border-neutral-700">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 flex items-center justify-between transition-colors hover:border-neutral-700">
             <label className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" /> Target
             </label>
@@ -458,30 +469,30 @@ export function CommandPanel({
               type="button"
               onClick={handleAddToManifest}
               disabled={!targetPos || !itemName}
-              className="bg-neutral-800 hover:bg-neutral-700 text-neutral-100 text-xs py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed border border-neutral-700 active:scale-[0.98]"
+              className="bg-neutral-800 hover:bg-neutral-700 text-neutral-100 text-xs py-2 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed border border-neutral-700 active:scale-[0.98]"
             >
               <Plus className="w-3.5 h-3.5" /> Add to Dropoff 
             </button>
           )}
         </div>
+      </div>
 
-        {/* Error Message */}
+      {/* PINNED FOOTER: Prominent Dispatch Button & Error Display */}
+      <div className="p-4 border-t border-neutral-800/80 bg-neutral-900/90 backdrop-blur-md shrink-0 flex flex-col gap-2 z-20">
+        
+        {/* Persistently Visible Error Message */}
         {error && (
-          <div className="text-xs text-red-400 flex items-center gap-2 bg-red-950/30 p-3 rounded-lg border border-red-900/50 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="text-xs text-red-400 flex items-center gap-2 bg-red-950/30 p-2.5 rounded-lg border border-red-900/50 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <AlertCircle className="w-4 h-4 shrink-0" /> {error}
           </div>
         )}
-      </div>
 
-      {/* PINNED FOOTER: Prominent Dispatch Button */}
-      <div className="p-5 border-t border-neutral-800/80 bg-neutral-900/90 backdrop-blur-md shrink-0 flex flex-col gap-3 z-20">
-        
         {/* Dynamic Dispatch Button */}
         <button
           type="button"
           onClick={handleMassDispatch}
           disabled={loading || (mode === 'vectorLock' && manifest.length === 0 && overflowQueue.length === 0) || (mode === 'swarm' && !targetPos)}
-          className={`w-full font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:shadow-none hover:scale-[1.02] ${
+          className={`w-full font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:shadow-none hover:scale-[1.02] ${
             mode === 'vectorLock'
               ? 'bg-white hover:bg-neutral-200 text-black shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)]'
               : 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-[0_0_15px_rgba(99,102,241,0.25)] hover:shadow-[0_0_25px_rgba(99,102,241,0.4)]'
@@ -493,7 +504,7 @@ export function CommandPanel({
 
         {/* Status Messages */}
         {status && (
-          <div className="text-xs font-medium text-emerald-400 bg-emerald-950/40 px-3 py-2.5 rounded-lg border border-emerald-900/50 animate-in fade-in slide-in-from-bottom-2 duration-300 text-center">
+          <div className="text-xs font-medium text-emerald-400 bg-emerald-950/40 px-3 py-2 rounded-lg border border-emerald-900/50 animate-in fade-in slide-in-from-bottom-2 duration-300 text-center">
             {status}
           </div>
         )}
